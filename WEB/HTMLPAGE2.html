@@ -1,0 +1,157 @@
+<!DOCTYPE html> 
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GPS 위치 표시</title>
+    <script type="text/javascript" src="http://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=4EC21CC1-0472-3F52-8031-ABD64252E03B&domain=http://map.vworld.kr"></script>
+    <style>
+		div.mar {
+		    margin-top: -40px;
+			margin-left: 160px;
+		}
+		div.map {
+		    margin-top: 10px;
+		}
+	</style>
+	<style type="text/css">
+		ul {
+		list-style-type: none;
+		margin: 0;
+		padding: 0;
+		background-color: #333;
+		}
+		ul:after{
+			content:'';
+			display: block;
+			clear:both;
+		}
+		li {
+			float: left;
+		}
+		li a {
+			display: block;
+			color: white;
+			text-align: center;
+			padding: 14px 16px;
+			text-decoration: none;
+		}
+		li a:hover:not(.active) {
+			background-color: #111;
+		}
+		.active {
+			background-color: #4CAF50;
+		}
+	</style>
+    </head>
+<body>
+<div id="choice">
+       <ul>
+		 <li><img src="UPAicon.png" alt="이미지 없음" style="height: 40px; width: auto;"></li>
+		 <li><a class="active" href="#home">GPS 추적</a></li>
+		 <li><a href="http://119.67.32.123:8840\hanium\add.php" target="_blank">장비 상세 정보 입력</a></li>
+		 <li><a href="http://119.67.32.123:8840\hanium\update.php" target="_blank">장비 상세 정보 업데이트</a></li>
+		 <li><a href="http://119.67.32.123:8840\hanium\CTinfo_add.php" target="_blank">컨테이너 상세 정보 입력</a></li>
+		 <li><a href="http://119.67.32.123:8840\hanium\CTinfo_update.php" target="_blank">컨테이너 상세 정보 업데이트</a></li>
+		</ul>
+</div>
+
+<center>
+	<div class= "map" id="vmap" style="width:90%; height:670px; left:auto; top:auto;"></div>
+</center>
+
+<div class="mar2" style="height: 30px; width: auto; border:2px solid blue;">
+	Gps_data
+     <input type="text" name="gpsData" style="height: 20px; width: auto">
+	 <input type="hidden" name="readData" style="height: 20px; width: auto;">
+	 <input type="text" name="CT_gpsData" style="height: 20px; width: auto">
+	 <input type="text" name="deviceData" style="height: 20px; width: auto;">
+	 <input type="text" name="ctEnvData" style="height: 20px; width: auto;">
+     <button type="button" id="marker" onclick="javascript:deviceMarker();" >마커표시</button>
+     <button type="button" id="cleaner" onclick="javascript:removeAllMarker();" >마커제거</button>
+</div>
+
+<script type="text/javascript">
+    //지도 생성
+	vw.ol3.MapOptions = {
+	    basemapType: vw.ol3.BasemapType.GRAPHIC
+	  , controlDensity: vw.ol3.DensityType.FULL
+	  , interactionDensity: vw.ol3.DensityType.FULL
+	  , controlsAutoArrange: true
+	  , homePosition: vw.ol3.CameraPosition
+	  , initPosition: vw.ol3.CameraPosition
+	};
+	vmap = new vw.ol3.Map("vmap",  vw.ol3.MapOptions);
+
+var markerLayer = new vw.ol3.layer.Marker(vmap); //마커 레이어 생성
+vmap.addLayer(markerLayer);
+
+//마커표시
+function deviceMarker() {
+    var data = document.getElementsByName('gpsData')[0].value;
+	var coordinate = JSON.parse(data);
+
+	var device_data = document.getElementsByName('deviceData')[0].value;
+	var deviceInfo = JSON.parse(device_data);
+
+	var ctData = document.getElementsByName('CT_gpsData')[0].value;
+	var ct = JSON.parse(ctData);
+
+	var ctEnvData = document.getElementsByName('ctEnvData')[0].value;
+	var ctEnv = JSON.parse(ctEnvData);
+
+    for(var i = 0; i < coordinate.result.length; i++)
+    {
+        vw.ol3.markerOption = {
+            x : coordinate.result[i].longitude,
+            y : coordinate.result[i].latitude,
+            epsg : "EPSG:4326",
+            title : "Device "+coordinate.result[i].equip_number,
+            contents : "Time: "+coordinate.result[i].time+", "+"Check_Data: "+deviceInfo.result[i].Check_data+", "+"Check_Reason: "+deviceInfo.result[i].Check_Reason+", "+"Total_Usingtime: "+deviceInfo.result[i].Total_Usingtime+", "+"Total_Distance: "+deviceInfo.result[i].Total_distance,
+            iconUrl : 'mk.png'
+        }; //마커 옵션 설정
+        markerLayer.addMarker(vw.ol3.markerOption);// 마커를 레이어에 등록
+    }
+    for(var i = 0; i < ct.result.length; i++)
+    {
+        vw.ol3.markerOption = {
+            x : ct.result[i].longitude,
+            y : ct.result[i].latitude,
+            epsg : "EPSG:4326",
+            title : "Container "+ct.result[i].equip_number+", "+"Time: "+ct.result[i].time,
+            contents : "Time: "+ctEnv.result[i].time+", "+"CT_into_env_id: "+ctEnv.result[i].CT_into_env_id+", "+"Temperature: "+ctEnv.result[i].Temperature+", "+"Humidity: "+ctEnv.result[i].Humidity+", "+"Door: "+ctEnv.result[i].Door+", "+"Cooling: "+ctEnv.result[i].Cooling,
+            iconUrl : 'mk1.png'
+        }; //마커 옵션 설정
+        markerLayer.addMarker(vw.ol3.markerOption);// 마커를 레이어에 등록
+    }
+}
+
+//마커제거
+function removeAllMarker()
+{
+    markerLayer.removeAllMarker();
+}
+
+//장비 정보 저장
+function saveToFile_Chrome(fileName)
+{
+    var fileName = 'device';
+    var content = document.getElementsByName('equipData').value;
+    var blob = new Blob([content], { type: 'text/plain' });
+
+    objURL = window.URL.createObjectURL(blob);
+
+    // 이전에 생성된 메모리 해제
+    if (window.__Xr_objURL_forCreatingFile__) {
+        window.URL.revokeObjectURL(window.__Xr_objURL_forCreatingFile__);
+    }
+    window.__Xr_objURL_forCreatingFile__ = objURL;
+
+    var a = document.createElement('a');
+
+    a.download = fileName;
+    a.href = objURL;
+    a.click();
+}
+</script>
+</body>
+</html>
